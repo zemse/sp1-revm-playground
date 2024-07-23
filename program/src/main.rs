@@ -15,14 +15,38 @@ use tiny_keccak::{Hasher, Keccak};
 
 use revm::{
     db::{CacheDB, EmptyDB},
-    primitives::{address, keccak256, AccountInfo, Bytes, ExecutionResult, TransactTo, U256},
-    Evm,
+    inspector_handle_register,
+    interpreter::{Interpreter, OpCode},
+    primitives::{
+        address, bytes, keccak256, AccountInfo, Bytes, ExecutionResult, TransactTo, U256,
+    },
+    Database, Evm, EvmContext, Inspector,
 };
 
+struct Logger;
+
+impl<DB: Database> Inspector<DB> for Logger {
+    fn step(&mut self, interp: &mut Interpreter, _context: &mut EvmContext<DB>) {
+        let opcode_num = interp.current_opcode();
+        let some_opcode = OpCode::new(opcode_num);
+        let opcode_str = some_opcode.map(|op| op.as_str()).unwrap_or("UNKNOWN");
+        println!("op start {}", opcode_str);
+    }
+
+    // fn step_end(&mut self, interp: &mut Interpreter, _context: &mut EvmContext<DB>) {
+    //     let opcode_num = interp.current_opcode();
+    //     let some_opcode = OpCode::new(opcode_num);
+    //     let opcode_str = some_opcode.map(|op| op.as_str()).unwrap_or("UNKNOWN");
+    //     println!("op end {}", opcode_str);
+    // }
+}
+
 pub fn main() {
+    println!("hey 123");
     let input = sp1_zkvm::io::read_vec();
 
     let input_code = bincode::deserialize::<Vec<u8>>(&input).unwrap();
+    // let input_code: Vec<u8> = bytes!("5f505f505f505f505f505f505f505f505f505f50").to_vec();
     let input_code = Bytes::from(input_code);
     println!("input code: {:?}", input_code);
 
@@ -31,6 +55,8 @@ pub fn main() {
     let db = CacheDB::new(EmptyDB::new());
     let evm = evm
         .with_db(db)
+        // .with_external_context(Logger)
+        // .append_handler_register(inspector_handle_register)
         .modify_db(|db| {
             db.insert_account_info(
                 dummy_address,
@@ -46,34 +72,21 @@ pub fn main() {
             tx.transact_to = TransactTo::Call(dummy_address);
         });
 
+    let mut value32: [u32; 256] = [0; 256];
+    let value8: [u8; 256] = [0; 256];
+    let mut val = 0;
+
+    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
+    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
+    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
+    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
+
     let mut evm = evm.build();
 
     let result = evm.transact_commit().unwrap();
 
-    let value = print_exec_result(result, 0);
+    let value = print_exec_result(result, val as u64);
     sp1_zkvm::io::commit(&value);
-    // for _ in 0..4 {
-    //     let mut hasher = Keccak::v256();
-    //     hasher.update(&value);
-    //     hasher.finalize(&mut value);
-    // }
-    // sp1_zkvm::io::commit(&value);
-    // NOTE: values of n larger than 186 will overflow the u128 type,
-    // resulting in output that doesn't match fibonacci sequence.
-    // However, the resulting proof will still be valid!
-    // let n = sp1_zkvm::io::read::<u32>();
-    // let mut a: u128 = 0;
-    // let mut b: u128 = 1;
-    // let mut sum: u128;
-    // // sum = a + b;
-    // for _ in 1..80000 {
-    //     sum = a + b;
-    //     a = b;
-    //     b = sum;
-    // }
-
-    // sp1_zkvm::io::commit(&a);
-    // sp1_zkvm::io::commit(&b);
 }
 
 fn print_exec_result(result: ExecutionResult, initial_gas_spend: u64) -> u64 {

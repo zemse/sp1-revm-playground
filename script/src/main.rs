@@ -1,23 +1,23 @@
-//! A simple script to generate and verify the proof of a given program.
+// ! A simple script to generate and verify the proof of a given program.
 
 use revm::primitives::bytes;
 use sp1_core::{
     runtime::{Program, Runtime},
     utils::SP1CoreOpts,
 };
-// use sp1_core::Program;
 use sp1_sdk::{ProverClient, SP1Stdin};
 
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[allow(unreachable_code)]
 fn main() {
+    println!("running script");
     // Generate proof.
     let mut stdin = SP1Stdin::new();
     // let n = 2u32;
 
     // Input Bytecode to execute on EVM
-    let n: Vec<u8> = bytes!("5f505f505f505f505f505f505f505f505f505f50").to_vec();
+    let n: Vec<u8> = bytes!("5f5f5f5f").to_vec();
 
     stdin.write(&n);
 
@@ -26,7 +26,8 @@ fn main() {
     let mut runtime = Runtime::new(program, opts);
     runtime.write_vecs(&stdin.buffer);
     runtime.run_untraced().unwrap();
-    println!("counter {}", runtime.counter);
+    // runtime.counter.end(runtime.steps_counter);
+    println!("counter {:?}", runtime.risc5_counter);
 
     return;
 
