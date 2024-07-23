@@ -18,7 +18,7 @@ use revm::{
     inspector_handle_register,
     interpreter::{Interpreter, OpCode},
     primitives::{
-        address, bytes, keccak256, AccountInfo, Bytes, ExecutionResult, TransactTo, U256,
+        address, bytes, keccak256, AccountInfo, Bytes, ExecutionResult, HashMap, TransactTo, U256,
     },
     Database, Evm, EvmContext, Inspector,
 };
@@ -72,20 +72,11 @@ pub fn main() {
             tx.transact_to = TransactTo::Call(dummy_address);
         });
 
-    let mut value32: [u32; 256] = [0; 256];
-    let value8: [u8; 256] = [0; 256];
-    let mut val = 0;
-
-    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
-    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
-    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
-    // val += sp1_zkvm::syscalls::sys_getenv(value32.as_mut_ptr(), 1, value8.as_ptr(), val);
-
     let mut evm = evm.build();
 
     let result = evm.transact_commit().unwrap();
 
-    let value = print_exec_result(result, val as u64);
+    let value = print_exec_result(result, 0);
     sp1_zkvm::io::commit(&value);
 }
 
@@ -94,19 +85,19 @@ fn print_exec_result(result: ExecutionResult, initial_gas_spend: u64) -> u64 {
         ExecutionResult::Success {
             gas_used, output, ..
         } => {
-            let data = match output {
-                revm::primitives::Output::Call(data) => data,
-                revm::primitives::Output::Create(_, _) => unreachable!(),
-            };
-            println!("Success!\nReturndata: {data}");
+            // let data = match output {
+            //     revm::primitives::Output::Call(data) => data,
+            //     revm::primitives::Output::Create(_, _) => unreachable!(),
+            // };
+            // println!("Success!\nReturndata: {data}");
             gas_used
         }
         ExecutionResult::Revert { gas_used, output } => {
-            println!("Revert!\nRevertdata: {output}");
+            // println!("Revert!\nRevertdata: {output}");
             gas_used
         }
         ExecutionResult::Halt { reason, gas_used } => {
-            println!("Halt!\nReason: {reason:?}");
+            // println!("Halt!\nReason: {reason:?}");
             gas_used
         }
     };

@@ -1,5 +1,7 @@
 // ! A simple script to generate and verify the proof of a given program.
 
+use std::collections::HashMap;
+
 use revm::primitives::bytes;
 use sp1_core::{
     runtime::{Program, Runtime},
@@ -28,6 +30,8 @@ fn main() {
     runtime.run_untraced().unwrap();
     // runtime.counter.end(runtime.steps_counter);
     println!("counter {:?}", runtime.risc5_counter);
+
+    print_hash_map_as_csv(runtime.risc5_counter.0);
 
     return;
 
@@ -59,4 +63,14 @@ fn main() {
         .expect("saving proof failed");
 
     println!("successfully generated and verified proof for the program!")
+}
+
+fn print_hash_map_as_csv<A, B>(h: HashMap<A, B>)
+where
+    A: std::fmt::Display,
+    B: std::fmt::Display,
+{
+    for (k, v) in h {
+        println!("{},{}", k, v);
+    }
 }
